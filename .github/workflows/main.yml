@@ -1,0 +1,34 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GH_PAT }}
+      
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.17
+        
+      - name: Login to GitHub container registry with Docker
+        run: docker login ghcr.io -u Kalissaac -p ${{ secrets.GITHUB_TOKEN }}
+        
+      - name: Build Docker image
+        run: docker build -t ghcr.io/Kalissaac/bowditch:latest -t ghcr.io/Kalissaac/bowditch:${GITHUB_SHA::8} .
+        
+      - name: Publish Docker image
+        run: docker push ghcr.io/Kalissaac/bowditch:latest
+        
+      - name: Trigger container rebuild and redeploy
+        uses: fjogeleit/http-request-action@8e939c608aea2d5df19da3e8229cf035f7aa9e4c
+        with:
+          url: ${{ secrets.WEBHOOK_URL }}
+          method: POST
+          bearerToken: ${{ secrets.WEBHOOK_SECRET }}
