@@ -18,13 +18,13 @@ jobs:
           go-version: 1.17
         
       - name: Login to GitHub container registry with Docker
-        run: docker login ghcr.io -u Kalissaac -p ${{ secrets.GITHUB_TOKEN }}
+        run: docker login ghcr.io -u kalissaac -p ${{ secrets.GITHUB_TOKEN }}
         
       - name: Build Docker image
-        run: docker build -t ghcr.io/Kalissaac/bowditch:latest -t ghcr.io/Kalissaac/bowditch:${GITHUB_SHA::8} .
+        run: docker build -t ghcr.io/kalissaac/bowditch:latest -t ghcr.io/kalissaac/bowditch:${GITHUB_SHA::8} .
         
       - name: Publish Docker image
-        run: docker push ghcr.io/Kalissaac/bowditch:latest
+        run: docker push ghcr.io/kalissaac/bowditch:latest
         
       - name: Trigger container rebuild and redeploy
         uses: fjogeleit/http-request-action@8e939c608aea2d5df19da3e8229cf035f7aa9e4c
