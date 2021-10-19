@@ -47,9 +47,9 @@ func main() {
 	app.Get("/:restaurant", func(c *fiber.Ctx) error {
 		return c.JSON(map[string][]MealData{
 			"data": {
-				getData(c.Params("restaurant", CROSSROADS), BREAKFAST),
-				getData(c.Params("restaurant", CROSSROADS), LUNCH),
-				getData(c.Params("restaurant", CROSSROADS), DINNER),
+				getData(formatParam(c.Params("restaurant", CROSSROADS)), BREAKFAST),
+				getData(formatParam(c.Params("restaurant", CROSSROADS)), LUNCH),
+				getData(formatParam(c.Params("restaurant", CROSSROADS)), DINNER),
 			},
 		})
 	})
@@ -122,5 +122,8 @@ func cleanCache() {
 		if err != nil {
 			fmt.Println(err)
 		}
+
+		c := colly.NewCollector()
+		c.Visit("https://caldining.berkeley.edu/menus/")
 	}
 }
