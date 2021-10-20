@@ -15,6 +15,6 @@
 # vendor/
 
 # Cache folder
-cache/
+.cache/
 
 bowditch

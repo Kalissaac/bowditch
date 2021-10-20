@@ -110,7 +110,7 @@ func getData(restaurant string, meal string) MealData {
 	})
 
 	c.DisableCookies()
-	c.CacheDir = "./cache"
+	c.CacheDir = "./.cache"
 	c.Visit("https://caldining.berkeley.edu/menus/")
 
 	return d
@@ -118,12 +118,14 @@ func getData(restaurant string, meal string) MealData {
 
 func cleanCache() {
 	for range time.Tick(3 * 60 * time.Minute) {
-		err := os.Remove("./cache")
+		err := os.RemoveAll("./.cache")
 		if err != nil {
 			fmt.Println(err)
 		}
 
 		c := colly.NewCollector()
+		c.DisableCookies()
+		c.CacheDir = "./.cache"
 		c.Visit("https://caldining.berkeley.edu/menus/")
 	}
 }
