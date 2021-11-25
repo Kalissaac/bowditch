@@ -1,17 +1,16 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
+	"net/http"
 	"os"
 	"runtime"
 	"strings"
 	"time"
 
 	"github.com/gocolly/colly/v2"
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/compress"
-	"github.com/gofiber/fiber/v2/middleware/etag"
-	"github.com/gofiber/fiber/v2/middleware/logger"
 )
 
 const (
@@ -32,41 +31,61 @@ func formatParam(param string) string {
 func main() {
 	go cleanCache()
 
-	app := fiber.New()
+	mux := http.NewServeMux()
 
-	app.Use(compress.New())
-	app.Use(etag.New())
-	app.Use(logger.New())
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
 
-	app.Get("/", func(c *fiber.Ctx) error {
-		return c.JSON(map[string]interface{}{
-			"message": "bueno",
-		})
+		url := strings.TrimSuffix(r.URL.Path, "/")
+		portions := strings.Split(url, "/")
+		fmt.Println(url, portions, len(portions))
+
+		if len(portions) == 1 { // /
+			w.Write([]byte(`{"message": "bowditch is alive"}`))
+			return
+		} else if len(portions) == 2 { // /restaurant
+			restaurant := portions[1]
+			data, err := json.Marshal(map[string][]MealData{
+				"data": {
+					getData(formatParam(restaurant), BREAKFAST),
+					getData(formatParam(restaurant), LUNCH),
+					getData(formatParam(restaurant), DINNER),
+				},
+			})
+
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(fmt.Sprintf(`{"message": "%s"}`, err)))
+			} else {
+				w.Write(data)
+			}
+			return
+		} else if len(portions) == 3 { // /restaurant/meal
+			restaurant := portions[1]
+			meal := portions[2]
+			data, err := json.Marshal(getData(
+				formatParam(restaurant),
+				formatParam(meal),
+			))
+
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(fmt.Sprintf(`{"message": "%s"}`, err)))
+			} else {
+				w.Write(data)
+			}
+			return
+		}
+
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(`{"message": "Not found"}`))
 	})
 
-	app.Get("/:restaurant", func(c *fiber.Ctx) error {
-		return c.JSON(map[string][]MealData{
-			"data": {
-				getData(formatParam(c.Params("restaurant", CROSSROADS)), BREAKFAST),
-				getData(formatParam(c.Params("restaurant", CROSSROADS)), LUNCH),
-				getData(formatParam(c.Params("restaurant", CROSSROADS)), DINNER),
-			},
-		})
-	})
-	app.Get("/:restaurant/:meal", func(c *fiber.Ctx) error {
-		return c.JSON(
-			getData(
-				formatParam(c.Params("restaurant", CROSSROADS)),
-				formatParam(c.Params("meal", LUNCH)),
-			),
-		)
-	})
-
+	addr := ":3000"
 	if runtime.GOOS == "darwin" {
-		app.Listen("localhost:3000")
-	} else {
-		app.Listen(":3000")
+		addr = "localhost:3000"
 	}
+	log.Fatal(http.ListenAndServe(addr, mux))
 }
 
 type MealData struct {
