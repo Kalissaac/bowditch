@@ -27,7 +27,7 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: kalissaac/bowditch:latest,kalissaac/bowditch:${GITHUB_SHA::8}
+          tags: kalissaac/bowditch:latest
       -
         name: Trigger container rebuild and redeploy
         uses: fjogeleit/http-request-action@8e939c608aea2d5df19da3e8229cf035f7aa9e4c
